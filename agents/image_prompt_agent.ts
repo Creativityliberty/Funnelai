@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 export async function imagePromptAgent(funnelData: any) {
+  const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es ImagePromptAgent. Ta mission est de générer des prompts précis pour des images de haute qualité qui seront utilisées dans le tunnel de vente.
 
 Voici les données du tunnel: ${JSON.stringify(funnelData)}.

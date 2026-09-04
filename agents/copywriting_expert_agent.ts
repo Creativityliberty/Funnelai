@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 export async function copywritingExpertAgent(offerIntent: any) {
+  const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es CopywritingExpertAgent. Ta mission est de rédiger tout le contenu textuel du tunnel de vente en suivant une structure de conversion psychologique prouvée.
 
 Voici l'intention commerciale: ${JSON.stringify(offerIntent)}.

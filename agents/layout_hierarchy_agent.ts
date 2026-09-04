@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 export async function layoutHierarchyAgent(funnelStructure: any) {
+  const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es LayoutHierarchyAgent.
 Tu reçois la structure du funnel suivante: ${JSON.stringify(funnelStructure)}.
 Applique strictement les 7 principes de conversion, en particulier:

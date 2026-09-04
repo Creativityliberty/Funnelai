@@ -1,17 +1,19 @@
 {
-  "name": "ai-studio-applet",
-  "version": "0.1.0",
+  "name": "funnel-ai-studio",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "mcp": "node mcp-server/index.mjs",
     "lint": "eslint .",
     "clean": "next clean"
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
     "@hookform/resolvers": "^5.2.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@types/d3": "^7.4.3",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",
@@ -25,7 +27,8 @@
     "postcss": "^8.5.6",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.1.11",

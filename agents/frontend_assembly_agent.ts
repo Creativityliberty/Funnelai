@@ -1,10 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 import { MARCEL_COMPONENT_LIBRARY } from "@/lib/components-library";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 export async function frontendAssemblyAgent(data: any) {
+  const ai = getAiClient();
   const template = data.template;
   const branding = data.brandingOverrides || (template ? template.config.branding : null);
   
@@ -18,7 +17,7 @@ Tu DOIS utiliser les styles du template "${template.name}":
 ` : "";
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es FrontendAssemblyAgent, un expert en Funnel Design et conversion.
 Tu assembles un tunnel de vente complet et ultra-convertible en HTML/CSS/JS vanilla basé sur ces données: ${JSON.stringify(data)}.
 ${templateDirectives}

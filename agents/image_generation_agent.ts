@@ -1,13 +1,12 @@
-import { GoogleGenAI } from '@google/genai';
-
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY });
+import { getAiClient, getGeminiImageModel } from '@/lib/ai-client';
 
 export async function imageGenerationAgent(funnelContext: any) {
   try {
+    const ai = getAiClient();
     const prompt = `Create a professional, high-converting hero image for a landing page based on this offer: ${JSON.stringify(funnelContext.intent)}. The style should match these branding guidelines: ${JSON.stringify(funnelContext.branding)}. No text in the image.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: getGeminiImageModel(),
       contents: {
         parts: [
           {

@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 export async function spacingRhythmAgent(layoutSpec: any) {
+  const ai = getAiClient();
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es SpacingRhythmAgent.
 Tu reçois la spécification de layout suivante: ${JSON.stringify(layoutSpec)}.
 Tu appliques strictement les principes de conversion sur le White Space:

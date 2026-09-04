@@ -1,11 +1,9 @@
-import { GoogleGenAI } from "@google/genai";
+import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
-
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "" });
-
 import { Template } from "@/lib/templates";
 
 export async function offerIntentAgent(rawRequest: string, template: Template | null = null) {
+  const ai = getAiClient();
   const templateContext = template ? `
 CONTEXTE TEMPLATE:
 Tu dois aligner ton analyse sur le template "${template.name}".
@@ -14,7 +12,7 @@ Structure suggérée: ${template.config.suggestedStructure.join(', ')}
 ` : "";
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: getGeminiTextModel(),
     contents: `Tu es OfferIntentAgent.
 Tu reçois une demande utilisateur pour créer un tunnel de vente: "${rawRequest}".
 ${templateContext}
