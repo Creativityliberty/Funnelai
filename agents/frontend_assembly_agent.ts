@@ -1,97 +1,109 @@
-import { getAiClient, getGeminiTextModel } from "@/lib/ai-client";
+import { getAiClient, getActiveTextModel } from "@/lib/ai-client";
 import { parseJsonResponse } from "@/lib/json-utils";
 import { MARCEL_COMPONENT_LIBRARY } from "@/lib/components-library";
 
 export async function frontendAssemblyAgent(data: any) {
   const ai = getAiClient();
   const template = data.template;
-  const branding = data.brandingOverrides || (template ? template.config.branding : null);
-  
-  const templateDirectives = template ? `
-DIRECTIVES TEMPLATE OBLIGATOIRES:
-Tu DOIS utiliser les styles du template "${template.name}":
-- Couleurs: Primaire ${branding.primaryColor}, Fond ${branding.backgroundColor}, Texte ${branding.textColor}.
-- Polices: Titres "${template.config.branding.fontHeadlines}", Corps "${template.config.branding.fontBody}".
-- Structure suggérée: ${template.config.suggestedStructure.join(' > ')}.
-- Ton de voix: ${template.config.copywritingTone}.
-` : "";
+  const branding = data.brandingOverrides || (template ? template.config.branding : {
+    primaryColor: '#D4AF37', // Or luxe
+    secondaryColor: '#1A1A1A',
+    backgroundColor: '#0A0A0A',
+    textColor: '#FFFFFF',
+    accentColor: '#FFD700',
+    fontHeadlines: 'Plus Jakarta Sans',
+    fontBody: 'Plus Jakarta Sans'
+  });
+
+  const primaryColor = branding.primaryColor || '#D4AF37';
+  const backgroundColor = branding.backgroundColor || '#0A0A0A';
+  const textColor = branding.textColor || '#FFFFFF';
+  const fontHeadlines = template?.config?.branding?.fontHeadlines || 'Plus Jakarta Sans, sans-serif';
+  const fontBody = template?.config?.branding?.fontBody || 'Plus Jakarta Sans, sans-serif';
+
+  const copy = data.copy?.data || data.copy || {};
+  const intent = data.intent?.data || data.intent || {};
 
   const response = await ai.models.generateContent({
-    model: getGeminiTextModel(),
-    contents: `Tu es FrontendAssemblyAgent, un expert en Funnel Design et conversion.
-Tu assembles un tunnel de vente complet et ultra-convertible en HTML/CSS/JS vanilla basé sur ces données: ${JSON.stringify(data)}.
-${templateDirectives}
+    model: getActiveTextModel(),
+    contents: `Tu es Senior Frontend Funnel Architect & Luxury UI Designer.
+Ta mission absolue est de produire le code HTML, CSS et JS complet d'une page de vente HAUTE CONVERSION (7-Figures Luxe) sans AUCUN raccourci, sans placeholder "..." et avec un niveau de finition irréprochable.
 
-BIBLIOTHÈQUE DE COMPOSANTS MARCEL (OBLIGATOIRE):
-Tu as accès à une bibliothèque de composants HTML haute-performance. Tu DOIS t'en inspirer pour la structure et le code HTML:
+DONNÉES DU PROJET :
+- Nom du Produit : "${intent.product_name || 'Offre Exclusive'}"
+- Promesse Centrale : "${intent.core_promise || ''}"
+- Cible : "${intent.suspected_audience || ''}"
+- Couleurs : Primaire ${primaryColor}, Fond ${backgroundColor}, Texte ${textColor}
+- Polices : Titres "${fontHeadlines}", Corps "${fontBody}"
+- Image Hero disponible : ${data.hasHeroImage ? 'OUI (utilise impérativement src="[heroImage]" avec id="hero-img")' : 'NON'}
+
+COPYWRITING 15 ÉTAPES À INCLURE INTÉGRALEMENT :
+${JSON.stringify(copy)}
+
+BIBLIOTHÈQUE DE STRUCTURES DE COMPOSANTS MARCEL (Modèles d'inspiration obligatoire) :
 ${JSON.stringify(MARCEL_COMPONENT_LIBRARY)}
 
-DIRECTIVES CRITIQUES DE DESIGN (Gusten Sun Method):
-1. STRUCTURE DE PAGE (15 ÉTAPES OBLIGATOIRES):
-   - Utilise les données de 'copy' pour remplir chaque section.
-   - Suis l'ordre: Header, Hero, Social Proof 1, Logos, Problem, Solution, How it Works, Differentiation, The Offer, Bonuses, Testimonials, Guarantee, About, Scarcity, FAQ, Footer.
-   - Utilise les composants de la bibliothèque MARCEL pour les sections correspondantes (ex: Hero, Logos).
+EXIGENCES TECHNIQUES IMPÉRATIVES :
 
-2. LAYOUT & HIERARCHY:
-   - Utilise une structure Section > Container > Grid/Flex.
-   - Respecte la hiérarchie visuelle Consistent Branding & Hierarchy.
-   - Applique CA.DA.CA (Capture, Direct, Convert, Attention) dans l'ordre des sections.
+1. HTML (index_html) :
+- Structure sémantique complète et articulée :
+  1. <header class="funnel-header"> : Logo et bouton d'action rapide.
+  2. <section class="hero-section"> : Pré-titre, H1 percutant, subheadline, double CTA, note de garantie, et l'image Hero <img id="hero-img" src="${data.hasHeroImage ? '[heroImage]' : 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=80'}" />.
+  3. <section class="section-logos"> : Bandeau de crédibilité avec profils ou médias.
+  4. <section class="problem-section" id="problem"> : Empathie + 3 cartes de douleurs explicites.
+  5. <section class="solution-section" id="solution"> : Comparatif côte-à-côte Old Way vs New Way + destination finale.
+  6. <section class="how-it-works-section" id="how-it-works"> : Roadmap en 3 étapes chronologiques avec numéros '01', '02', '03'.
+  7. <section class="offer-section" id="offer"> : Stack d'offre complet avec liste à puces '✓', prix barré, prix spécial et CTA principal.
+  8. <section class="bonuses-section"> : 3 cartes de bonus offerts avec pastilles "Valeur Offerte".
+  9. <section class="testimonials-section" id="testimonials"> : 3 à 4 cartes de témoignages avec 5 étoiles ★★★★★, citation forte et auteur.
+  10. <section class="guarantee-section"> : Sceau 100% garanti avec texte d'inversion du risque.
+  11. <section class="scarcity-section"> : Compte à rebours (#timer-hours, #timer-minutes, #timer-seconds) et jauge de places restantes.
+  12. <section class="faq-section" id="faq"> : 4 à 5 questions/réponses en accordéon interactif (<div class="faq-item"><button class="faq-question">...<span class="faq-icon">+</span></button><div class="faq-answer"><p>...</p></div></div>).
+  13. <footer class="funnel-footer"> : Badges de sécurité SSL, liens et copyright.
+- Remplis CHAQUE section avec le texte réel du copywriting fourni. Ne laisse aucun lorem ipsum ni champ vide.
 
-3. TYPOGRAPHY & SIZE (Tokens stricts):
-   - H1: 92px (Mobile: 60px), font-weight: 900, letter-spacing: -0.02em.
-   - H2: 56px (Mobile: 40px), font-weight: 700.
-   - Body Text: 26px.
-   - Paragraphs: 24px.
-   - Preheadline: Uppercase, spacing 0.1em, color: primary.
+2. CSS (styles_css) :
+- Variables :root :
+  :root {
+    --primary: ${primaryColor};
+    --primary-glow: ${primaryColor}40;
+    --bg-color: ${backgroundColor};
+    --surface: #141416;
+    --surface-border: rgba(255, 255, 255, 0.08);
+    --text: ${textColor};
+    --text-muted: #9E9E9E;
+    --font-heading: '${fontHeadlines}', sans-serif;
+    --font-body: '${fontBody}', sans-serif;
+    --radius-lg: 20px;
+    --radius-md: 12px;
+  }
+- Typographie responsive avec clamp() (H1: clamp(2.2rem, 5vw, 3.8rem), H2: clamp(1.8rem, 3.5vw, 2.6rem)).
+- Glassmorphism sur les cartes (background: rgba(20, 20, 22, 0.75); backdrop-filter: blur(16px); border: 1px solid var(--surface-border)).
+- Boutons .btn-primary avec transition douce, effet de survol lumineux et animation @keyframes pulse subtile.
+- Grilles responsives auto-fit (grid-template-columns: repeat(auto-fit, minmax(280px, 1fr))).
+- Media queries propres pour mobile (@media (max-width: 768px)).
 
-4. SPACING & WHITE SPACE:
-   - Section Padding: 120px (Top/Bottom).
-   - Container Max-width: 1200px (Standard) ou 900px (Narrow).
-   - "Give your design space to breath": Utilise des marges généreuses (30px, 50px).
+3. JAVASCRIPT (script_js) :
+- FAQ Accordion : interaction au clic sur .faq-question pour ouvrir/fermer avec transition fluide (seule 1 question ouverte à la fois).
+- Countdown Timer : compte à rebours dynamique qui décrémente chaque seconde sur #timer-hours, #timer-minutes, #timer-seconds.
+- Smooth Scroll : défilement doux vers les ancres #offer, #how-it-works, #faq.
+- Scroll Reveal : animation d'apparition progressive via IntersectionObserver sur les classes .reveal.
 
-5. IMAGES & VISUALS:
-   - Si 'hasHeroImage' est vrai dans les données, utilise impérativement la chaîne de caractères "[heroImage]" comme source pour l'image principale du Hero (ex: <img src="[heroImage]" ...>).
-   - Pour les autres images, utilise les prompts de 'imagePrompts' pour insérer des placeholders d'images descriptifs (ex: <div class="image-placeholder" data-prompt="...">).
-   - Utilise des icônes Lucide ou FontAwesome si nécessaire.
-
-6. CONTRAST & BRANDING:
-   - Applique le thème (Light/Dark/Hybrid) défini dans les tokens.
-   - Utilise la couleur primaire pour les CTA et les accents importants.
-   - Ajoute de la profondeur avec des ombres subtiles et des calques (layers).
-
-7. DIRECTION & INTERACTION (OBLIGATOIRE):
-   - FAQ ACCORDION: Implémente un effet accordéon où une seule question s'ouvre à la fois avec une transition fluide de la hauteur (max-height).
-   - CTA PULSE: Ajoute une animation de pulse subtile (@keyframes pulse) sur les boutons "Get Instant Access" et "Discover Plans".
-   - TILT EFFECT: Ajoute un effet de tilt interactif en JS sur les cartes de prix (pricing cards) et les bonus cards au survol (hover).
-   - SCROLL REVEAL: Utilise Intersection Observer pour ajouter la classe 'visible' aux éléments avec la classe 'reveal' (sections Problem, Solution, How it Works).
-   - DIRECTION VISUELLE: Utilise des éléments visuels (flèches, regards) pour guider vers le CTA.
-
-LIVRABLES:
-- index_html: Structure sémantique complète avec TOUTES les 15 étapes.
-- styles_css: CSS moderne avec variables :root.
-- script_js: Interactions fluides et performantes.
-
-Réponds uniquement en JSON valide selon ce contrat:
+Réponds STRICTEMENT en format JSON valide selon le contrat :
 {
   "status": "success",
   "agent": "FrontendAssemblyAgent",
-  "task_id": "frontend_assembly_01",
-  "confidence": 0.95,
-  "summary": "Tunnel de vente complet assemblé avec 15 étapes de conversion",
   "data": {
-    "index_html": "string",
-    "styles_css": "string",
-    "script_js": "string",
-    "files": ["index.html", "styles.css", "script.js"]
-  },
-  "issues": [],
-  "next_actions": []
+    "index_html": "CODE_HTML_COMPLET",
+    "styles_css": "CODE_CSS_COMPLET",
+    "script_js": "CODE_JS_COMPLET"
+  }
 }
 `,
     config: {
       responseMimeType: "application/json",
-      maxOutputTokens: 8192
-    }
+      maxOutputTokens: 8192,
+    },
   });
 
   return parseJsonResponse(response.text);

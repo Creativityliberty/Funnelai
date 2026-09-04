@@ -602,7 +602,9 @@ export default function Page() {
     if (!preview) return '';
     let indexHtml = preview.index_html;
     if (preview.heroImage) {
-      indexHtml = indexHtml.replace(/\[heroImage\]/g, preview.heroImage);
+      indexHtml = indexHtml.replaceAll('[heroImage]', preview.heroImage);
+      indexHtml = indexHtml.replace(/(<img[^>]*id=["']hero-img["'][^>]*src=)["'][^"']*["']/i, `$1"${preview.heroImage}"`);
+      indexHtml = indexHtml.replace(/(<img[^>]*src=)["'][^"']*["']([^>]*id=["']hero-img["'])/i, `$1"${preview.heroImage}"$2`);
     }
     return `
       <!DOCTYPE html>

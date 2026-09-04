@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
 
     let enrichedHtml = indexHtml;
     if (result.heroImage) {
-      if (enrichedHtml.includes('id="hero-img"') || enrichedHtml.includes("id='hero-img'")) {
-        enrichedHtml = enrichedHtml.replace(/src="[^"]*"/, `src="${result.heroImage}"`);
-      }
+      enrichedHtml = enrichedHtml.replaceAll('[heroImage]', result.heroImage);
+      enrichedHtml = enrichedHtml.replace(/(<img[^>]*id=["']hero-img["'][^>]*src=)["'][^"']*["']/i, `$1"${result.heroImage}"`);
+      enrichedHtml = enrichedHtml.replace(/(<img[^>]*src=)["'][^"']*["']([^>]*id=["']hero-img["'])/i, `$1"${result.heroImage}"$2`);
     }
 
     const standaloneHtml = `<!DOCTYPE html>
