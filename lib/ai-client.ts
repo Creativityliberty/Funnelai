@@ -11,8 +11,6 @@ const IMAGE_FALLBACK_MODELS = [
   "imagen-3.0-generate-002",
 ];
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 function isCapacityOrTransientError(err: any): boolean {
   const msg = (err?.message || err?.toString() || "").toLowerCase();
   const status = err?.status || err?.code;
@@ -49,7 +47,13 @@ export function getGeminiTextModel(): string {
   if (typeof window !== "undefined") {
     try {
       const saved = localStorage.getItem("gemini_text_model");
-      if (saved && saved.trim()) return saved.trim();
+      if (saved && saved.trim()) {
+        if (saved.trim() === "gemini-3-flash-preview") {
+          localStorage.setItem("gemini_text_model", "gemini-2.5-flash");
+          return "gemini-2.5-flash";
+        }
+        return saved.trim();
+      }
     } catch (_) {}
   }
   return process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash";
@@ -88,30 +92,21 @@ export function getAiClient(customApiKey?: string): GoogleGenAI {
       const currentModel = candidateModels[i];
       const modelParams = { ...params, model: currentModel };
 
-      // Attempt up to 2 tries per candidate model
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const result = await originalGenerateContent(modelParams);
-          return result;
-        } catch (err: any) {
-          lastError = err;
-          if (isCapacityOrTransientError(err)) {
-            console.warn(
-              `[Funnel AI Engine] Modèle ${currentModel} saturé (${err.message || "503 UNAVAILABLE"}). Tentative ${attempt}/2...`
-            );
-            if (attempt < 2) {
-              await sleep(600 * attempt);
-              continue;
-            }
-            if (i < candidateModels.length - 1) {
-              console.warn(
-                `[Funnel AI Engine] Bascule automatique vers le modèle de secours: ${candidateModels[i + 1]}`
-              );
-            }
-          } else {
-            // Not a transient/capacity error, rethrow immediately
-            throw err;
+      try {
+        const result = await originalGenerateContent(modelParams);
+        return result;
+      } catch (err: any) {
+        lastError = err;
+        if (isCapacityOrTransientError(err)) {
+          console.warn(
+            `[Funnel AI Engine] Modèle ${currentModel} indisponible (${err.message || "503 UNAVAILABLE"}). Bascule immédiate vers: ${candidateModels[i + 1] || 'fin de liste'}`
+          );
+          if (i < candidateModels.length - 1) {
+            continue;
           }
+        } else {
+          // Not a capacity error (e.g. invalid auth), throw
+          throw err;
         }
       }
     }

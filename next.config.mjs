@@ -16,6 +16,7 @@ const nextConfig = {
       },
     ],
   },
+  devIndicators: false,
   output: 'standalone',
   transpilePackages: ['motion'],
 };
