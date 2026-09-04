@@ -17,7 +17,7 @@ const nextConfig = {
     ],
   },
   devIndicators: false,
-  output: 'standalone',
+  ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
   transpilePackages: ['motion'],
 };
 
