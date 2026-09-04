@@ -52,7 +52,7 @@ Réponds uniquement en JSON valide selon ce contrat:
 `,
     config: {
       responseMimeType: "application/json",
-      maxOutputTokens: 4096
+      maxOutputTokens: 8192
     }
   });
 
