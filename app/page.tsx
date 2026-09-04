@@ -216,7 +216,7 @@ export default function Page() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // AI Models and API Key state for Settings
-  const [selectedTextModel, setSelectedTextModel] = useState<string>('gemini-3-flash-preview');
+  const [selectedTextModel, setSelectedTextModel] = useState<string>('gemini-2.5-flash');
   const [selectedImageModel, setSelectedImageModel] = useState<string>('gemini-2.5-flash-image');
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
@@ -436,6 +436,8 @@ export default function Page() {
       console.error(err);
       if (err.message?.includes('403') || err.message?.includes('leaked') || err.message?.includes('API key')) {
         setError("Clé API invalide ou quota de génération expiré. Veuillez vérifier votre clé API dans les Paramètres.");
+      } else if (err.message?.includes('503') || err.message?.includes('demand') || err.message?.includes('UNAVAILABLE')) {
+        setError("Le service d'IA subit une forte affluence momentanée sur ce modèle. Le moteur réessaie automatiquement sur nos modèles haute disponibilité.");
       } else {
         setError("Une erreur est survenue lors de l'analyse de l'offre. Veuillez réessayer.");
       }
@@ -522,6 +524,8 @@ export default function Page() {
       console.error(err);
       if (err.message?.includes('403') || err.message?.includes('leaked') || err.message?.includes('API key')) {
         setError("Clé API invalide ou quota de génération expiré. Veuillez vérifier votre clé API dans les Paramètres.");
+      } else if (err.message?.includes('503') || err.message?.includes('demand') || err.message?.includes('UNAVAILABLE')) {
+        setError("Le service d'IA subit une forte affluence momentanée sur ce modèle. Le moteur réessaie automatiquement sur nos modèles haute disponibilité.");
       } else {
         setError("Une erreur est survenue lors de la génération du tunnel. Veuillez réessayer.");
       }
@@ -1514,9 +1518,9 @@ export default function Page() {
                         onChange={(e) => setSelectedTextModel(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono font-medium"
                       >
-                        <option value="gemini-3-flash-preview">gemini-3-flash-preview (Recommandé • Raisonnement Avancé &amp; Contexte 1M)</option>
-                        <option value="gemini-2.5-flash">gemini-2.5-flash (Ultra-rapide • Hybride)</option>
-                        <option value="gemini-2.0-flash">gemini-2.0-flash (Production Standard)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Recommandé • Haute Disponibilité &amp; Vitesse Éclair)</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash (Production Stable)</option>
+                        <option value="gemini-3-flash-preview">gemini-3-flash-preview (Raisonnement Avancé • Fort Trafic)</option>
                       </select>
                       <p className="text-[11px] text-muted-foreground mt-1">
                         Utilisé pour l&apos;analyse d&apos;offre, la structure de vente, le copywriting 15 étapes et la génération frontend.
