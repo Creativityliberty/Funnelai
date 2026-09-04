@@ -598,7 +598,13 @@ export default function Page() {
               <p className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-[0.25em] font-medium">Luxe Studio</p>
             </div>
           ) : (
-            <span className="font-black text-xs tracking-widest text-primary">FAI</span>
+            <div 
+              onClick={toggleSidebar}
+              className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center text-primary shadow-[0_0_10px_var(--color-primary)] cursor-pointer hover:bg-primary/25 transition-all group"
+              title="FUNNEL AI — Luxe Studio (Déplier)"
+            >
+              <Sparkles size={18} className="text-primary group-hover:scale-110 transition-transform" />
+            </div>
           )}
           <button
             onClick={toggleSidebar}
