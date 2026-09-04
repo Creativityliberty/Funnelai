@@ -1,13 +1,16 @@
 openapi: 3.1.0
 info:
-  title: Funnel AI Studio API
+  title: Funnel AI Studio API & MCP Suite
   description: >
-    API d'orchestration cognitive pour concevoir des tunnels de vente
-    haute conversion clé en main avec design luxe et copywriting persuasif.
-  version: 1.0.0
+    API d'orchestration cognitive et suite d'outils d'élite pour concevoir,
+    affiner la stratégie, générer des images et modifier en sandbox des tunnels
+    de vente haute conversion clé en main avec design Luxe Studio et copywriting persuasif.
+  version: 2.0.0
+
 servers:
   - url: https://funnelai.coolify.dallico.com/api/v1
     description: Serveur Funnel AI Studio Production
+
 paths:
   /health:
     get:
@@ -32,6 +35,7 @@ paths:
                   timestamp:
                     type: string
                     format: date-time
+
   /templates:
     get:
       operationId: listTemplates
@@ -61,6 +65,7 @@ paths:
                           type: string
                         category:
                           type: string
+
   /funnels/analyze:
     post:
       operationId: analyzeOffer
@@ -77,12 +82,10 @@ paths:
                 request:
                   type: string
                   description: >
-                    Description commerciale complète de l'offre :
-                    cible, produit, tarif, bénéfices et positionnement.
+                    Description commerciale de l'offre : cible, produit, tarif, bénéfices.
                 templateId:
                   type: string
-                  description: >
-                    Identifiant optionnel d'un template de référence.
+                  description: ID optionnel d'un template de référence.
       responses:
         "200":
           description: Analyse business et stratégie de conversion
@@ -128,6 +131,67 @@ paths:
                         type: string
                       recommendedTemplate:
                         type: string
+
+  /funnels/refine-strategy:
+    post:
+      operationId: refineStrategy
+      summary: Combler les lacunes stratégiques (tarifs, témoignages, garantie, livrables, trafic, délais)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  type: string
+                  description: Description initiale de l'offre.
+                identifiedGaps:
+                  type: array
+                  items:
+                    type: string
+                  description: Liste optionnelle des lacunes à combler.
+                userPreferences:
+                  type: object
+                  description: Préférences tarifaires ou canaux d'acquisition.
+      responses:
+        "200":
+          description: Stratégie complète enrichie à 360 degrés
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      product_name:
+                        type: string
+                      pricing_packages:
+                        type: array
+                        items:
+                          type: object
+                      guarantee:
+                        type: object
+                      case_studies_testimonials:
+                        type: array
+                        items:
+                          type: object
+                      deliverables_stack:
+                        type: array
+                        items:
+                          type: object
+                      traffic_strategy:
+                        type: object
+                      expected_timeline:
+                        type: object
+                      enriched_master_brief:
+                        type: string
+
   /funnels/generate:
     post:
       operationId: generateCompleteFunnel
@@ -146,13 +210,11 @@ paths:
                   description: Description de l'offre ou brief de conversion.
                 templateId:
                   type: string
-                  description: >
-                    ID optionnel d'un template comme coaching-high-ticket,
-                    ecommerce-drop ou saas-minimal.
+                  description: ID optionnel d'un template (ex: coaching-high-ticket, ecommerce-drop).
                 generateHeroImage:
                   type: boolean
                   default: true
-                  description: Générer automatiquement une image Hero.
+                  description: Générer automatiquement une image Hero photoréaliste via IA.
       responses:
         "200":
           description: Tunnel complet généré avec code frontend et visuel
@@ -185,3 +247,146 @@ paths:
                             type: string
                           standalone_html:
                             type: string
+
+  /funnels/generate-image:
+    post:
+      operationId: generateHeroImage
+      summary: Générer une image photoréaliste personnalisée pour le tunnel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+                  description: Description visuelle de l'image souhaitée.
+                style:
+                  type: string
+                  description: Style visuel (ex: Luxe Studio, Cyber Neon, 3D Render).
+                aspectRatio:
+                  type: string
+                  default: "16:9"
+      responses:
+        "200":
+          description: Image générée avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      imageUrl:
+                        type: string
+                      prompt:
+                        type: string
+
+  /funnels/modify:
+    post:
+      operationId: modifyFunnelSandbox
+      summary: Modifier le code d'un tunnel en sandbox (HTML, CSS, JS) selon une consigne
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - instruction
+              properties:
+                instruction:
+                  type: string
+                  description: Consigne de modification précise.
+                indexHtml:
+                  type: string
+                  description: Code HTML actuel.
+                stylesCss:
+                  type: string
+                  description: Code CSS actuel.
+                scriptJs:
+                  type: string
+                  description: Code JS actuel.
+                standaloneHtml:
+                  type: string
+                  description: Fichier HTML autonome existant.
+                injectedAssets:
+                  type: object
+                  description: Assets optionnels à insérer (heroImageUrl, couleurs, etc.).
+      responses:
+        "200":
+          description: Code du tunnel modifié avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      changes_applied:
+                        type: array
+                        items:
+                          type: string
+                      files:
+                        type: object
+                        properties:
+                          index_html:
+                            type: string
+                          styles_css:
+                            type: string
+                          script_js:
+                            type: string
+                          standalone_html:
+                            type: string
+
+  /funnels/export:
+    post:
+      operationId: exportFunnelBundle
+      summary: Exporter le tunnel sous forme d'archive ZIP téléchargeable ou fichier HTML
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productName:
+                  type: string
+                  default: "Mon-Tunnel-Luxe"
+                indexHtml:
+                  type: string
+                stylesCss:
+                  type: string
+                scriptJs:
+                  type: string
+                standaloneHtml:
+                  type: string
+                format:
+                  type: string
+                  enum: ["zip", "html", "json"]
+                  default: "zip"
+      responses:
+        "200":
+          description: Archive ou bundle de téléchargement généré
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  filename:
+                    type: string
+                  download_url:
+                    type: string
+                  summary:
+                    type: string

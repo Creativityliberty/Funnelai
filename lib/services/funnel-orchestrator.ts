@@ -11,6 +11,8 @@ import { proofNumbersAgent } from "@/agents/proof_numbers_agent";
 import { interactionMotionAgent } from "@/agents/interaction_motion_agent";
 import { frontendAssemblyAgent } from "@/agents/frontend_assembly_agent";
 import { imageGenerationAgent } from "@/agents/image_generation_agent";
+import { strategyRefinementAgent, StrategyRefinementInput } from "@/agents/strategy_refinement_agent";
+import { sandboxModifierAgent, SandboxModifierInput } from "@/agents/sandbox_modifier_agent";
 import { TEMPLATES, Template } from "@/lib/templates";
 
 export interface FunnelGenerationOptions {
@@ -50,6 +52,24 @@ export async function analyzeOfferIntent(request: string, templateId?: string) {
     data: intentRes.data || intentRes,
     template,
   };
+}
+
+export async function refineFunnelStrategy(input: StrategyRefinementInput) {
+  return await strategyRefinementAgent(input);
+}
+
+export async function generateCustomImage(options: {
+  prompt?: string;
+  style?: string;
+  aspectRatio?: string;
+  intent?: any;
+  branding?: any;
+}) {
+  return await imageGenerationAgent(options);
+}
+
+export async function modifyFunnelSandbox(input: SandboxModifierInput) {
+  return await sandboxModifierAgent(input);
 }
 
 export async function generateFullFunnel(options: FunnelGenerationOptions): Promise<FunnelGenerationResult> {

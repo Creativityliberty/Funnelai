@@ -1716,22 +1716,38 @@ export default function Page() {
                         <Sparkles size={12} className="text-primary" />
                         Outils Exposés (Tools)
                       </div>
-                      <ul className="text-xs space-y-1.5 text-muted-foreground font-mono bg-muted/40 p-3 rounded-xl border border-border">
-                        <li className="flex items-center justify-between">
-                          <span className="text-foreground font-semibold">funnel_create_complete</span>
-                          <span className="text-[10px] text-primary">Génération 100% autonome</span>
+                      <ul className="text-xs space-y-2 text-muted-foreground font-mono bg-muted/40 p-3 rounded-xl border border-border">
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
+                          <span className="text-foreground font-bold">funnel_create_complete</span>
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">Génération 100% autonome</span>
                         </li>
-                        <li className="flex items-center justify-between">
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
                           <span className="text-foreground font-semibold">funnel_analyze_offer</span>
-                          <span className="text-[10px] text-muted-foreground">Analyse &amp; Promesse</span>
+                          <span className="text-[10px] text-muted-foreground">Analyse &amp; Diagnostic</span>
                         </li>
-                        <li className="flex items-center justify-between">
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
+                          <span className="text-foreground font-semibold">funnel_refine_strategy</span>
+                          <span className="text-[10px] text-accent bg-accent/10 px-1.5 py-0.5 rounded">Tarifs, Garantie, Témoignages</span>
+                        </li>
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
+                          <span className="text-foreground font-semibold">funnel_generate_image</span>
+                          <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">Image Hero IA (Gemini Imagen)</span>
+                        </li>
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
+                          <span className="text-foreground font-semibold">funnel_modify_code</span>
+                          <span className="text-[10px] text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded">Édition Sandbox (HTML/CSS/JS)</span>
+                        </li>
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
+                          <span className="text-foreground font-semibold">funnel_export_bundle</span>
+                          <span className="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">Export ZIP &amp; Standalone</span>
+                        </li>
+                        <li className="flex items-center justify-between pb-1 border-b border-border/50">
                           <span className="text-foreground font-semibold">funnel_list_templates</span>
                           <span className="text-[10px] text-muted-foreground">Catalogue Templates</span>
                         </li>
                         <li className="flex items-center justify-between">
                           <span className="text-foreground font-semibold">funnel_engine_health</span>
-                          <span className="text-[10px] text-muted-foreground">Statut moteur</span>
+                          <span className="text-[10px] text-muted-foreground">Statut &amp; Santé Moteur</span>
                         </li>
                       </ul>
                     </div>
