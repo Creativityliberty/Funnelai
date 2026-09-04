@@ -102,9 +102,12 @@ export async function generateFullFunnel(options: FunnelGenerationOptions): Prom
   let heroImageUrl: string | undefined = undefined;
   if (generateHeroImage) {
     try {
+      const heroPrompt = imagePromptsRes?.data?.hero_image?.prompt;
       const imgRes = await imageGenerationAgent({
+        prompt: heroPrompt,
         intent: intentData,
         branding: brandRes.data || brandRes,
+        style: imagePromptsRes?.data?.hero_image?.style,
       });
       if (imgRes.success && imgRes.data?.imageUrl) {
         heroImageUrl = imgRes.data.imageUrl;

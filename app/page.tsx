@@ -67,9 +67,11 @@ export default function Page() {
 
   // AI Models and API Key state for Settings
   const [selectedTextModel, setSelectedTextModel] = useState<string>('deepseek-chat');
-  const [selectedImageModel, setSelectedImageModel] = useState<string>('gemini-2.5-flash-image');
+  const [selectedImageModel, setSelectedImageModel] = useState<string>('Flux1schnell');
   const [deepSeekApiKeyInput, setDeepSeekApiKeyInput] = useState<string>('');
   const [showDeepSeekApiKey, setShowDeepSeekApiKey] = useState<boolean>(false);
+  const [deApiKeyInput, setDeApiKeyInput] = useState<string>('');
+  const [showDeApiKey, setShowDeApiKey] = useState<boolean>(false);
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
@@ -108,14 +110,26 @@ export default function Page() {
       localStorage.setItem('active_text_model', 'deepseek-chat');
     }
 
-    const savedImageModel = localStorage.getItem('gemini_image_model');
-    if (savedImageModel) setSelectedImageModel(savedImageModel);
+    const savedImageModel = localStorage.getItem('image_model') || localStorage.getItem('gemini_image_model');
+    if (savedImageModel && (savedImageModel.startsWith('Flux') || savedImageModel.startsWith('ZImage'))) {
+      setSelectedImageModel(savedImageModel);
+    } else {
+      setSelectedImageModel('Flux1schnell');
+      localStorage.setItem('image_model', 'Flux1schnell');
+    }
 
     const savedDeepSeekKey = localStorage.getItem('deepseek_api_key');
     if (savedDeepSeekKey) {
       setDeepSeekApiKeyInput(savedDeepSeekKey);
     } else if (process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY) {
       setDeepSeekApiKeyInput(process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY);
+    }
+
+    const savedDeApiKey = localStorage.getItem('deapi_api_key');
+    if (savedDeApiKey) {
+      setDeApiKeyInput(savedDeApiKey);
+    } else if (process.env.NEXT_PUBLIC_DEAPI_API_KEY) {
+      setDeApiKeyInput(process.env.NEXT_PUBLIC_DEAPI_API_KEY);
     }
 
     const savedKey = localStorage.getItem('gemini_api_key');
@@ -181,10 +195,14 @@ export default function Page() {
 
   const saveAiSettings = () => {
     localStorage.setItem('active_text_model', selectedTextModel);
-    localStorage.setItem('gemini_text_model', selectedTextModel);
+    localStorage.setItem('deepseek_text_model', selectedTextModel);
+    localStorage.setItem('image_model', selectedImageModel);
     localStorage.setItem('gemini_image_model', selectedImageModel);
     if (deepSeekApiKeyInput.trim()) {
       localStorage.setItem('deepseek_api_key', deepSeekApiKeyInput.trim());
+    }
+    if (deApiKeyInput.trim()) {
+      localStorage.setItem('deapi_api_key', deApiKeyInput.trim());
     }
     if (apiKeyInput.trim()) {
       localStorage.setItem('gemini_api_key', apiKeyInput.trim());
@@ -367,7 +385,13 @@ export default function Page() {
       setAgentStatuses(prev => ({ ...prev, interaction_motion: 'done', image_generation: 'running' }));
       let heroImageUrl = undefined;
       try {
-        const imgRes = await imageGenerationAgent({ intent: intentRes.data, branding: brandRes.data });
+        const heroPrompt = imagePromptsRes?.data?.hero_image?.prompt;
+        const imgRes = await imageGenerationAgent({
+          prompt: heroPrompt,
+          intent: intentRes.data,
+          branding: brandRes.data,
+          style: imagePromptsRes?.data?.hero_image?.style,
+        });
         if (imgRes.success && imgRes.data?.imageUrl) {
           heroImageUrl = imgRes.data.imageUrl;
         }
@@ -449,7 +473,13 @@ export default function Page() {
     
     setIsGeneratingImage(true);
     try {
-      const res = await imageGenerationAgent({ intent: result.intent.data, branding: result.branding.data });
+      const heroPrompt = result.imagePrompts?.data?.hero_image?.prompt;
+      const res = await imageGenerationAgent({
+        prompt: heroPrompt,
+        intent: result.intent?.data,
+        branding: result.branding?.data,
+        style: result.imagePrompts?.data?.hero_image?.style,
+      });
       if (res.success && res.data?.imageUrl) {
         const updatedProjects = projects.map(p => {
           if (p.id === currentProjectId) {
@@ -639,6 +669,10 @@ export default function Page() {
                 setDeepSeekApiKeyInput={setDeepSeekApiKeyInput}
                 showDeepSeekApiKey={showDeepSeekApiKey}
                 setShowDeepSeekApiKey={setShowDeepSeekApiKey}
+                deApiKeyInput={deApiKeyInput}
+                setDeApiKeyInput={setDeApiKeyInput}
+                showDeApiKey={showDeApiKey}
+                setShowDeApiKey={setShowDeApiKey}
                 apiKeyInput={apiKeyInput}
                 setApiKeyInput={setApiKeyInput}
                 showApiKey={showApiKey}

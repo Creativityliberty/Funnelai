@@ -34,9 +34,16 @@ export async function imageGenerationAgent(options: ImageGenerationOptions | any
       },
     });
 
-    let imageUrl = null;
-    if (response.candidates?.[0]?.content?.parts) {
+    let imageUrl = response.imageUrl || null;
+    let boostedPrompt = response.boostedPrompt || null;
+
+    if (!imageUrl && response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
+        if (part.imageUrl) {
+          imageUrl = part.imageUrl;
+          boostedPrompt = part.boostedPrompt || boostedPrompt;
+          break;
+        }
         if (part.inlineData) {
           imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
           break;
@@ -48,7 +55,7 @@ export async function imageGenerationAgent(options: ImageGenerationOptions | any
       success: true,
       data: {
         imageUrl,
-        prompt,
+        prompt: boostedPrompt || prompt,
         aspectRatio: options.aspectRatio || "16:9",
       },
     };

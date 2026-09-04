@@ -27,6 +27,10 @@ interface SettingsViewProps {
   setDeepSeekApiKeyInput: (val: string) => void;
   showDeepSeekApiKey: boolean;
   setShowDeepSeekApiKey: (val: boolean) => void;
+  deApiKeyInput: string;
+  setDeApiKeyInput: (val: string) => void;
+  showDeApiKey: boolean;
+  setShowDeApiKey: (val: boolean) => void;
   apiKeyInput: string;
   setApiKeyInput: (val: string) => void;
   showApiKey: boolean;
@@ -44,6 +48,10 @@ export const SettingsView = ({
   setDeepSeekApiKeyInput,
   showDeepSeekApiKey,
   setShowDeepSeekApiKey,
+  deApiKeyInput,
+  setDeApiKeyInput,
+  showDeApiKey,
+  setShowDeApiKey,
   apiKeyInput,
   setApiKeyInput,
   showApiKey,
@@ -120,7 +128,7 @@ export const SettingsView = ({
               >
                 <option value="deepseek-chat">deepseek-chat (Recommandé • V4 Flash / Chat • Puissant, Économique &amp; Précis)</option>
                 <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 • Raisonnement Stratégique 7-Figures)</option>
-                <option value="gemini-2.5-flash">gemini-2.5-flash (Google • Haute Disponibilité &amp; Vitesse)</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash (Google • Secours &amp; Vitesse)</option>
                 <option value="gemini-2.0-flash">gemini-2.0-flash (Google Stable)</option>
               </select>
               <p className="text-[11px] text-muted-foreground mt-1">
@@ -131,27 +139,31 @@ export const SettingsView = ({
             {/* Image Model */}
             <div>
               <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                Modèle Génération d&apos;Images Hero (Google)
+                Modèle Génération d&apos;Images Hero (deAPI / Google)
               </label>
               <select
                 value={selectedImageModel}
                 onChange={(e) => setSelectedImageModel(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono font-medium"
               >
-                <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (Recommandé • Rendu Photoréaliste Studio 8K)</option>
+                <option value="Flux1schnell">Flux1schnell (Recommandé deAPI • FLUX.1 Schnell 12B • 0.002$/img • Ultra-Rapide &amp; Photoréaliste)</option>
+                <option value="ZImageTurbo_INT8">ZImageTurbo_INT8 (deAPI • Z-Image Turbo 8-Steps • 0.009$/img)</option>
+                <option value="Flux_2_Klein_4B_BF16">Flux_2_Klein_4B_BF16 (deAPI • FLUX.2 Klein 4B)</option>
+                <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (Google Imagen 3)</option>
               </select>
               <p className="text-[11px] text-muted-foreground mt-1">
-                Génère l&apos;image Hero photoréaliste encodée directement dans le tunnel via Gemini Imagen.
+                deAPI FLUX.1 Schnell génère des visuels hero 8K ultra-détaillés à prix mini (~0,002$/image) avec le prompt booster intégré.
               </p>
             </div>
 
-            {/* DeepSeek API Key BYOK */}
+            {/* API Keys BYOK */}
             <div className="pt-3 border-t border-border space-y-4">
+              {/* DeepSeek API Key */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                     <Key size={12} className="text-primary" />
-                    Clé API DeepSeek (Moteur Principal - Texte, Code, Copywriting)
+                    Clé API DeepSeek (Texte, Code, Copywriting 13 Agents)
                   </label>
                   {deepSeekApiKeyInput && (
                     <span className="text-[10px] text-primary font-bold flex items-center gap-1">
@@ -176,17 +188,49 @@ export const SettingsView = ({
                     {showDeepSeekApiKey ? "Cacher" : "Voir"}
                   </button>
                 </div>
+              </div>
+
+              {/* deAPI Key */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                    <ImageIcon size={12} className="text-primary" />
+                    Clé API deAPI (Génération d&apos;Images Ultra Économique FLUX.1 Schnell)
+                  </label>
+                  {deApiKeyInput && (
+                    <span className="text-[10px] text-primary font-bold flex items-center gap-1">
+                      <CheckCircle2 size={12} /> Configurée
+                    </span>
+                  )}
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    type={showDeApiKey ? "text" : "password"}
+                    value={deApiKeyInput}
+                    onChange={(e) => setDeApiKeyInput(e.target.value)}
+                    placeholder="18179|..."
+                    className="w-full pl-3.5 pr-24 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowDeApiKey(!showDeApiKey)}
+                    className="absolute right-2 px-2.5 py-1 text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors flex items-center gap-1"
+                  >
+                    {showDeApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                    {showDeApiKey ? "Cacher" : "Voir"}
+                  </button>
+                </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  Obtenez votre clé sur <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">platform.deepseek.com</a>.
+                  Obtenez votre clé sur <a href="https://app.deapi.ai/dashboard/api-keys" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">app.deapi.ai</a> ($5 de crédits offerts).
                 </p>
               </div>
 
-              {/* Gemini API Key BYOK */}
+              {/* Gemini API Key */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                     <Sparkles size={12} className="text-primary" />
-                    Clé API Gemini (Génération d&apos;Images Hero &amp; Secours)
+                    Clé API Gemini (Secours &amp; Imagen Optionnel)
                   </label>
                   {apiKeyInput && (
                     <span className="text-[10px] text-primary font-bold flex items-center gap-1">
