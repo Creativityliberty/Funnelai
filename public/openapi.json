@@ -7,8 +7,8 @@
   },
   "servers": [
     {
-      "url": "/api/v1",
-      "description": "API Funnel AI Studio Locale / Production"
+      "url": "https://funnelai.coolify.dallico.com/api/v1",
+      "description": "Serveur Funnel AI Studio Production"
     }
   ],
   "paths": {
@@ -28,7 +28,7 @@
                     "service": { "type": "string" },
                     "version": { "type": "string" },
                     "engine": { "type": "string" },
-                    "timestamp": { "type": "string" }
+                    "timestamp": { "type": "string", "format": "date-time" }
                   }
                 }
               }
@@ -85,7 +85,7 @@
                 "properties": {
                   "request": {
                     "type": "string",
-                    "description": "Description commerciale complète de l'offre (cible, produit, tarif, bénéfices)."
+                    "description": "Description commerciale complète de l'offre : cible, produit, tarif, bénéfices et positionnement."
                   },
                   "templateId": {
                     "type": "string",
@@ -102,7 +102,27 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "analysis": {
+                      "type": "object",
+                      "properties": {
+                        "productName": { "type": "string" },
+                        "targetAudience": { "type": "string" },
+                        "coreOffer": { "type": "string" },
+                        "valueProposition": { "type": "string" },
+                        "positioning": { "type": "string" },
+                        "painPoints": { "type": "array", "items": { "type": "string" } },
+                        "desires": { "type": "array", "items": { "type": "string" } },
+                        "objections": { "type": "array", "items": { "type": "string" } },
+                        "benefits": { "type": "array", "items": { "type": "string" } },
+                        "conversionStrategy": { "type": "string" },
+                        "funnelType": { "type": "string" },
+                        "recommendedTemplate": { "type": "string" }
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -113,7 +133,7 @@
     "/funnels/generate": {
       "post": {
         "operationId": "generateCompleteFunnel",
-        "summary": "Générer un tunnel de vente complet haute conversion avec code HTML/CSS/JS et Hero Image",
+        "summary": "Générer un tunnel de vente complet haute conversion",
         "requestBody": {
           "required": true,
           "content": {
@@ -128,12 +148,12 @@
                   },
                   "templateId": {
                     "type": "string",
-                    "description": "ID optionnel d'un template (ex: coaching-high-ticket, ecommerce-drop, saas-minimal)."
+                    "description": "ID optionnel d'un template comme coaching-high-ticket, ecommerce-drop ou saas-minimal."
                   },
                   "generateHeroImage": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Générer automatiquement une image Hero haute définition via le moteur d'images."
+                    "description": "Générer automatiquement une image Hero."
                   }
                 }
               }
@@ -161,7 +181,8 @@
                           "properties": {
                             "index_html": { "type": "string" },
                             "styles_css": { "type": "string" },
-                            "script_js": { "type": "string" }
+                            "script_js": { "type": "string" },
+                            "standalone_html": { "type": "string" }
                           }
                         }
                       }

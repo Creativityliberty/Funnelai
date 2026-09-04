@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import * as d3 from 'd3';
 import JSZip from 'jszip';
 import { get, set } from 'idb-keyval';
-import { Copy, Check, Maximize2, Minimize2, FileCode2, Download, ExternalLink, X, FileArchive, FileJson, Sparkles, LayoutDashboard, Rocket, FileText, Settings, Users, ArrowRight, Image as ImageIcon, Trash2, CreditCard, User, Mail, Lock, LogOut, Sun, Moon, Cpu, Terminal, Server, Globe, Code2, CheckCircle2, Eye, EyeOff, Key, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Copy, Check, Maximize2, Minimize2, FileCode2, Download, ExternalLink, X, FileArchive, FileJson, Sparkles, LayoutDashboard, Rocket, FileText, Settings, Users, ArrowRight, Image as ImageIcon, Trash2, CreditCard, User, Mail, Lock, LogOut, Sun, Moon, Cpu, Terminal, Server, Globe, Code2, CheckCircle2, Eye, EyeOff, Key, PanelLeftClose, PanelLeftOpen, Play, Loader2, Activity } from 'lucide-react';
 import { offerIntentAgent } from '@/agents/offer_intent_agent';
 import { funnelStructureAgent } from '@/agents/funnel_structure_agent';
 import { headlineCopyAgent } from '@/agents/headline_copy_agent';
@@ -222,7 +222,16 @@ export default function Page() {
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
 
+  const [apiOrigin, setApiOrigin] = useState<string>('https://funnelai.coolify.dallico.com');
+  const [apiTestStatus, setApiTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [apiTestResult, setApiTestResult] = useState<any>(null);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setApiOrigin(window.location.origin);
+    }
+
     const savedTheme = localStorage.getItem('funnel_theme');
     if (savedTheme === 'light') {
       setIsDarkMode(false);
@@ -250,6 +259,27 @@ export default function Page() {
       setApiKeyInput(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
     }
   }, []);
+
+  const handleTestApi = async () => {
+    setApiTestStatus('testing');
+    try {
+      const startTime = performance.now();
+      const res = await fetch('/api/v1/health');
+      const data = await res.json();
+      const duration = Math.round(performance.now() - startTime);
+      setApiTestResult({ ...data, latencyMs: `${duration}ms` });
+      setApiTestStatus('success');
+    } catch (err: any) {
+      setApiTestResult({ error: err.message || 'Erreur de connexion' });
+      setApiTestStatus('error');
+    }
+  };
+
+  const copyToClipboard = (text: string, fieldId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldId);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
@@ -1641,12 +1671,20 @@ export default function Page() {
                 </div>
                 <div className="flex items-center gap-2">
                   <a
+                    href="/openapi.yaml"
+                    download="openapi.yaml"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-xl text-xs font-bold tracking-wider transition-colors shadow-xs"
+                  >
+                    <Download size={14} />
+                    OPENAPI YAML (CHATGPT)
+                  </a>
+                  <a
                     href="/openapi.json"
                     download="openapi.json"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-card hover:bg-muted text-foreground border border-border rounded-xl text-xs font-bold tracking-wider transition-colors shadow-xs"
+                    className="inline-flex items-center gap-2 px-3.5 py-2 bg-card hover:bg-muted text-foreground border border-border rounded-xl text-xs font-bold tracking-wider transition-colors shadow-xs"
                   >
-                    <Download size={14} className="text-primary" />
-                    TÉLÉCHARGER OPENAPI (JSON)
+                    <Download size={14} className="text-muted-foreground" />
+                    OPENAPI JSON
                   </a>
                 </div>
               </div>
@@ -1700,13 +1738,11 @@ export default function Page() {
                     <div className="bg-muted/80 p-3 rounded-xl border border-border font-mono text-xs text-primary flex items-center justify-between">
                       <code>npm run mcp</code>
                       <button
-                        onClick={() => {
-                          navigator.clipboard.writeText('npm run mcp');
-                        }}
-                        className="p-1 hover:text-foreground text-muted-foreground transition-colors"
+                        onClick={() => copyToClipboard('npm run mcp', 'mcp')}
+                        className="p-1 hover:text-foreground text-muted-foreground transition-colors cursor-pointer"
                         title="Copier"
                       >
-                        <Copy size={14} />
+                        {copiedField === 'mcp' ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
                       </button>
                     </div>
                   </div>
@@ -1736,28 +1772,108 @@ export default function Page() {
                       <ol className="text-xs space-y-2 text-muted-foreground bg-muted/40 p-3.5 rounded-xl border border-border list-decimal list-inside">
                         <li>Allez dans ChatGPT &gt; <strong>Explore GPTs</strong> &gt; <strong>Create a GPT</strong>.</li>
                         <li>Dans l&apos;onglet <strong>Configure</strong>, cliquez sur <strong>Create new action</strong>.</li>
-                        <li>Dans <em>Import from URL</em>, collez l&apos;URL ci-dessous ou importez le fichier <code className="text-foreground">openapi.json</code>.</li>
-                        <li>ChatGPT découvre automatiquement toutes les routes et peut générer des tunnels pour vos clients !</li>
+                        <li>Dans <em>Import from URL</em>, collez l&apos;URL YAML recommandée ci-dessous.</li>
+                        <li>ChatGPT importe le schéma avec toutes les routes et peut générer des tunnels clé en main !</li>
                       </ol>
                     </div>
                   </div>
 
-                  <div className="mt-5 pt-4 border-t border-border">
-                    <p className="text-[11px] font-bold text-foreground uppercase tracking-wider mb-2">URL du Schéma OpenAPI :</p>
-                    <div className="bg-muted/80 p-3 rounded-xl border border-border font-mono text-xs text-accent flex items-center justify-between">
-                      <code>http://localhost:3000/api/v1/openapi</code>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText('http://localhost:3000/api/v1/openapi');
-                        }}
-                        className="p-1 hover:text-foreground text-muted-foreground transition-colors"
-                        title="Copier"
-                      >
-                        <Copy size={14} />
-                      </button>
+                  <div className="mt-5 pt-4 border-t border-border space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+                          URL OpenAPI YAML (Recommandé) :
+                        </span>
+                        <span className="text-[10px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-semibold">ChatGPT Custom GPT</span>
+                      </div>
+                      <div className="bg-muted/80 p-2.5 rounded-xl border border-border font-mono text-xs text-primary flex items-center justify-between">
+                        <code className="truncate mr-2">{apiOrigin}/api/v1/openapi.yaml</code>
+                        <button
+                          onClick={() => copyToClipboard(`${apiOrigin}/api/v1/openapi.yaml`, 'yaml')}
+                          className="p-1 hover:text-foreground text-muted-foreground transition-colors shrink-0 cursor-pointer"
+                          title="Copier"
+                        >
+                          {copiedField === 'yaml' ? <Check size={14} className="text-primary" /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-bold text-foreground uppercase tracking-wider">
+                          URL OpenAPI JSON :
+                        </span>
+                      </div>
+                      <div className="bg-muted/80 p-2.5 rounded-xl border border-border font-mono text-xs text-accent flex items-center justify-between">
+                        <code className="truncate mr-2">{apiOrigin}/api/v1/openapi</code>
+                        <button
+                          onClick={() => copyToClipboard(`${apiOrigin}/api/v1/openapi`, 'json')}
+                          className="p-1 hover:text-foreground text-muted-foreground transition-colors shrink-0 cursor-pointer"
+                          title="Copier"
+                        >
+                          {copiedField === 'json' ? <Check size={14} className="text-accent" /> : <Copy size={14} />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Live API Tester */}
+              <div className="bg-card p-5 rounded-2xl border border-border shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 text-primary">
+                      <Activity size={20} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                        Testeur Live API &amp; Healthcheck
+                        {apiTestStatus === 'success' && (
+                          <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-500 text-[10px] font-bold rounded-full border border-emerald-500/20">
+                            En ligne ({apiTestResult?.latencyMs || 'OK'})
+                          </span>
+                        )}
+                        {apiTestStatus === 'error' && (
+                          <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[10px] font-bold rounded-full border border-red-500/20">
+                            Erreur
+                          </span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Vérifiez la connectivité en temps réel entre vos clients externes (ChatGPT, MCP, cURL) et le moteur API.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleTestApi}
+                    disabled={apiTestStatus === 'testing'}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground rounded-xl text-xs font-bold tracking-wider flex items-center gap-2 transition-all shadow-xs cursor-pointer"
+                  >
+                    {apiTestStatus === 'testing' ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        TEST EN COURS...
+                      </>
+                    ) : (
+                      <>
+                        <Play size={14} />
+                        TESTER L&apos;API EN DIRECT
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {apiTestResult && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                      Réponse JSON reçue (/api/v1/health) :
+                    </div>
+                    <pre className="bg-muted/80 p-3 rounded-xl border border-border text-xs font-mono text-foreground overflow-x-auto max-h-40">
+                      {JSON.stringify(apiTestResult, null, 2)}
+                    </pre>
+                  </div>
+                )}
               </div>
 
               {/* Code Configuration Snippets */}
@@ -1777,7 +1893,7 @@ export default function Page() {
       "command": "node",
       "args": ["/chemin/absolu/vers/mcp-server/index.mjs"],
       "env": {
-        "FUNNEL_API_URL": "http://localhost:3000/api/v1"
+        "FUNNEL_API_URL": "${apiOrigin}/api/v1"
       }
     }
   }
@@ -1787,7 +1903,7 @@ export default function Page() {
                   <CodeBlock
                     filename="curl-generate-funnel.sh"
                     language="bash"
-                    code={`curl -X POST http://localhost:3000/api/v1/funnels/generate \\
+                    code={`curl -X POST ${apiOrigin}/api/v1/funnels/generate \\
   -H "Content-Type: application/json" \\
   -d '{
     "request": "Coaching privé High-Ticket pour dirigeants d entreprise, 3500€, promesse: doubler sa rentabilité en 90 jours",

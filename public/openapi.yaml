@@ -1,0 +1,187 @@
+openapi: 3.1.0
+info:
+  title: Funnel AI Studio API
+  description: >
+    API d'orchestration cognitive pour concevoir des tunnels de vente
+    haute conversion clé en main avec design luxe et copywriting persuasif.
+  version: 1.0.0
+servers:
+  - url: https://funnelai.coolify.dallico.com/api/v1
+    description: Serveur Funnel AI Studio Production
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Vérifier le statut du moteur Funnel AI Studio
+      responses:
+        "200":
+          description: Statut opérationnel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+                  version:
+                    type: string
+                  engine:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+  /templates:
+    get:
+      operationId: listTemplates
+      summary: Lister tous les modèles de tunnels disponibles
+      responses:
+        "200":
+          description: Liste des templates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  count:
+                    type: integer
+                  templates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        description:
+                          type: string
+                        category:
+                          type: string
+  /funnels/analyze:
+    post:
+      operationId: analyzeOffer
+      summary: Analyser une offre et déduire la stratégie de conversion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  type: string
+                  description: >
+                    Description commerciale complète de l'offre :
+                    cible, produit, tarif, bénéfices et positionnement.
+                templateId:
+                  type: string
+                  description: >
+                    Identifiant optionnel d'un template de référence.
+      responses:
+        "200":
+          description: Analyse business et stratégie de conversion
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  analysis:
+                    type: object
+                    properties:
+                      productName:
+                        type: string
+                      targetAudience:
+                        type: string
+                      coreOffer:
+                        type: string
+                      valueProposition:
+                        type: string
+                      positioning:
+                        type: string
+                      painPoints:
+                        type: array
+                        items:
+                          type: string
+                      desires:
+                        type: array
+                        items:
+                          type: string
+                      objections:
+                        type: array
+                        items:
+                          type: string
+                      benefits:
+                        type: array
+                        items:
+                          type: string
+                      conversionStrategy:
+                        type: string
+                      funnelType:
+                        type: string
+                      recommendedTemplate:
+                        type: string
+  /funnels/generate:
+    post:
+      operationId: generateCompleteFunnel
+      summary: Générer un tunnel de vente complet haute conversion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request
+              properties:
+                request:
+                  type: string
+                  description: Description de l'offre ou brief de conversion.
+                templateId:
+                  type: string
+                  description: >
+                    ID optionnel d'un template comme coaching-high-ticket,
+                    ecommerce-drop ou saas-minimal.
+                generateHeroImage:
+                  type: boolean
+                  default: true
+                  description: Générer automatiquement une image Hero.
+      responses:
+        "200":
+          description: Tunnel complet généré avec code frontend et visuel
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: string
+                      product_name:
+                        type: string
+                      price:
+                        type: string
+                      heroImage:
+                        type: string
+                      files:
+                        type: object
+                        properties:
+                          index_html:
+                            type: string
+                          styles_css:
+                            type: string
+                          script_js:
+                            type: string
+                          standalone_html:
+                            type: string

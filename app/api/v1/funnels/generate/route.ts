@@ -26,21 +26,50 @@ export async function POST(req: NextRequest) {
     });
 
     const frontendData = result.frontend?.data || {};
+    const indexHtml = frontendData.index_html || "";
+    const stylesCss = frontendData.styles_css || "";
+    const scriptJs = frontendData.script_js || "";
+
+    let enrichedHtml = indexHtml;
+    if (result.heroImage) {
+      if (enrichedHtml.includes('id="hero-img"') || enrichedHtml.includes("id='hero-img'")) {
+        enrichedHtml = enrichedHtml.replace(/src="[^"]*"/, `src="${result.heroImage}"`);
+      }
+    }
+
+    const standaloneHtml = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${result.intent?.data?.product_name || "Tunnel de Vente"} — Luxe Conversion Suite</title>
+  <style>
+${stylesCss}
+  </style>
+</head>
+<body>
+${enrichedHtml}
+  <script>
+${scriptJs}
+  </script>
+</body>
+</html>`;
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          summary: result.intent?.summary || "Tunnel de vente généré",
+          summary: result.intent?.summary || "Tunnel de vente haute conversion généré",
           product_name: result.intent?.data?.product_name,
           price: result.intent?.data?.price,
           target_audience: result.intent?.data?.suspected_audience,
           core_promise: result.intent?.data?.core_promise,
           heroImage: result.heroImage,
           files: {
-            index_html: frontendData.index_html || "",
-            styles_css: frontendData.styles_css || "",
-            script_js: frontendData.script_js || "",
+            index_html: enrichedHtml,
+            styles_css: stylesCss,
+            script_js: scriptJs,
+            standalone_html: standaloneHtml,
           },
           rawAgents: {
             intent: result.intent?.data,
