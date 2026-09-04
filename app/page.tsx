@@ -216,8 +216,10 @@ export default function Page() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // AI Models and API Key state for Settings
-  const [selectedTextModel, setSelectedTextModel] = useState<string>('gemini-2.5-flash');
+  const [selectedTextModel, setSelectedTextModel] = useState<string>('deepseek-chat');
   const [selectedImageModel, setSelectedImageModel] = useState<string>('gemini-2.5-flash-image');
+  const [deepSeekApiKeyInput, setDeepSeekApiKeyInput] = useState<string>('');
+  const [showDeepSeekApiKey, setShowDeepSeekApiKey] = useState<boolean>(false);
   const [apiKeyInput, setApiKeyInput] = useState<string>('');
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [settingsSaved, setSettingsSaved] = useState<boolean>(false);
@@ -246,11 +248,18 @@ export default function Page() {
       setIsSidebarCollapsed(true);
     }
 
-    const savedTextModel = localStorage.getItem('gemini_text_model');
+    const savedTextModel = localStorage.getItem('active_text_model') || localStorage.getItem('gemini_text_model');
     if (savedTextModel) setSelectedTextModel(savedTextModel);
 
     const savedImageModel = localStorage.getItem('gemini_image_model');
     if (savedImageModel) setSelectedImageModel(savedImageModel);
+
+    const savedDeepSeekKey = localStorage.getItem('deepseek_api_key');
+    if (savedDeepSeekKey) {
+      setDeepSeekApiKeyInput(savedDeepSeekKey);
+    } else if (process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY) {
+      setDeepSeekApiKeyInput(process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY);
+    }
 
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) {
@@ -290,8 +299,12 @@ export default function Page() {
   };
 
   const saveAiSettings = () => {
+    localStorage.setItem('active_text_model', selectedTextModel);
     localStorage.setItem('gemini_text_model', selectedTextModel);
     localStorage.setItem('gemini_image_model', selectedImageModel);
+    if (deepSeekApiKeyInput.trim()) {
+      localStorage.setItem('deepseek_api_key', deepSeekApiKeyInput.trim());
+    }
     if (apiKeyInput.trim()) {
       localStorage.setItem('gemini_api_key', apiKeyInput.trim());
     }
@@ -1518,72 +1531,111 @@ export default function Page() {
                         onChange={(e) => setSelectedTextModel(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono font-medium"
                       >
-                        <option value="gemini-2.5-flash">gemini-2.5-flash (Recommandé • Haute Disponibilité &amp; Vitesse Éclair)</option>
-                        <option value="gemini-2.0-flash">gemini-2.0-flash (Production Stable)</option>
-                        <option value="gemini-3-flash-preview">gemini-3-flash-preview (Raisonnement Avancé • Fort Trafic)</option>
+                        <option value="deepseek-chat">deepseek-chat (Recommandé • V4 Flash / Chat • Puissant, Économique &amp; Précis)</option>
+                        <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 • Raisonnement Stratégique 7-Figures)</option>
+                        <option value="gemini-2.5-flash">gemini-2.5-flash (Google • Haute Disponibilité &amp; Vitesse)</option>
+                        <option value="gemini-2.0-flash">gemini-2.0-flash (Google Stable)</option>
                       </select>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Utilisé pour l&apos;analyse d&apos;offre, la structure de vente, le copywriting 15 étapes et la génération frontend.
+                        DeepSeek pilote l&apos;intention, la psychologie de conversion, le copywriting 15 étapes et la génération frontend.
                       </p>
                     </div>
 
                     {/* Image Model */}
                     <div>
                       <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5">
-                        Modèle Génération d&apos;Images Hero
+                        Modèle Génération d&apos;Images Hero (Google)
                       </label>
                       <select
                         value={selectedImageModel}
                         onChange={(e) => setSelectedImageModel(e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono font-medium"
                       >
-                        <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (Recommandé • Rendu Photoréaliste Haute Définition)</option>
+                        <option value="gemini-2.5-flash-image">gemini-2.5-flash-image (Recommandé • Rendu Photoréaliste Studio 8K)</option>
                       </select>
                       <p className="text-[11px] text-muted-foreground mt-1">
-                        Génère l&apos;image Hero photoréaliste encodée directement dans le tunnel.
+                        Génère l&apos;image Hero photoréaliste encodée directement dans le tunnel via Gemini Imagen.
                       </p>
                     </div>
 
-                    {/* API Key BYOK */}
-                    <div className="pt-3 border-t border-border">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                          <Key size={12} className="text-primary" />
-                          Clé API Gemini (BYOK - Bring Your Own Key)
-                        </label>
-                        {apiKeyInput && (
-                          <span className="text-[10px] text-primary font-bold flex items-center gap-1">
-                            <CheckCircle2 size={12} /> Configurée
-                          </span>
-                        )}
+                    {/* DeepSeek API Key BYOK */}
+                    <div className="pt-3 border-t border-border space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <Key size={12} className="text-primary" />
+                            Clé API DeepSeek (Moteur Principal - Texte, Code, Copywriting)
+                          </label>
+                          {deepSeekApiKeyInput && (
+                            <span className="text-[10px] text-primary font-bold flex items-center gap-1">
+                              <CheckCircle2 size={12} /> Configurée
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type={showDeepSeekApiKey ? "text" : "password"}
+                            value={deepSeekApiKeyInput}
+                            onChange={(e) => setDeepSeekApiKeyInput(e.target.value)}
+                            placeholder="sk-..."
+                            className="w-full pl-3.5 pr-24 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowDeepSeekApiKey(!showDeepSeekApiKey)}
+                            className="absolute right-2 px-2.5 py-1 text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors flex items-center gap-1"
+                          >
+                            {showDeepSeekApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                            {showDeepSeekApiKey ? "Cacher" : "Voir"}
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Obtenez votre clé sur <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">platform.deepseek.com</a>.
+                        </p>
                       </div>
-                      <div className="relative flex items-center">
-                        <input
-                          type={showApiKey ? "text" : "password"}
-                          value={apiKeyInput}
-                          onChange={(e) => setApiKeyInput(e.target.value)}
-                          placeholder="AIzaSy..."
-                          className="w-full pl-3.5 pr-24 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-2 px-2.5 py-1 text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors flex items-center gap-1"
-                        >
-                          {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                          {showApiKey ? "Cacher" : "Voir"}
-                        </button>
+
+                      {/* Gemini API Key BYOK */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <Sparkles size={12} className="text-primary" />
+                            Clé API Gemini (Génération d&apos;Images Hero &amp; Secours)
+                          </label>
+                          {apiKeyInput && (
+                            <span className="text-[10px] text-primary font-bold flex items-center gap-1">
+                              <CheckCircle2 size={12} /> Configurée
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type={showApiKey ? "text" : "password"}
+                            value={apiKeyInput}
+                            onChange={(e) => setApiKeyInput(e.target.value)}
+                            placeholder="AIzaSy..."
+                            className="w-full pl-3.5 pr-24 py-2.5 rounded-xl border border-input bg-background/50 focus:bg-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all text-foreground text-xs font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="absolute right-2 px-2.5 py-1 text-muted-foreground hover:text-foreground text-xs font-semibold transition-colors flex items-center gap-1"
+                          >
+                            {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                            {showApiKey ? "Cacher" : "Voir"}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                         <p className="text-[11px] text-muted-foreground">
-                          Sauvegardée localement dans votre navigateur pour une utilisation autonome.
+                          Clés sauvegardées de façon sécurisée dans votre navigateur local.
                         </p>
                         <button
                           onClick={saveAiSettings}
                           className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-xl font-bold text-xs tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5"
                         >
                           {settingsSaved ? <Check size={14} /> : <Cpu size={14} />}
-                          {settingsSaved ? "ENREGISTRÉ !" : "SAUVEGARDER LE MOTEUR"}
+                          {settingsSaved ? "ENREGISTRÉ !" : "SAUVEGARDER LES PARAMÈTRES IA"}
                         </button>
                       </div>
                     </div>

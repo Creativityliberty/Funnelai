@@ -1,31 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 
-const TEXT_FALLBACK_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-];
+export const DEFAULT_TEXT_MODEL = "deepseek-chat";
+export const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
 
-const IMAGE_FALLBACK_MODELS = [
-  "gemini-2.5-flash-image",
-  "imagen-3.0-generate-002",
-];
-
-function isCapacityOrTransientError(err: any): boolean {
-  const msg = (err?.message || err?.toString() || "").toLowerCase();
-  const status = err?.status || err?.code;
+export function getDeepSeekApiKey(): string {
+  if (typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem("deepseek_api_key");
+      if (saved && saved.trim()) return saved.trim();
+    } catch (_) {}
+  }
   return (
-    status === 503 ||
-    status === 429 ||
-    status === "UNAVAILABLE" ||
-    status === "RESOURCE_EXHAUSTED" ||
-    msg.includes("503") ||
-    msg.includes("high demand") ||
-    msg.includes("temporar") ||
-    msg.includes("unavailable") ||
-    msg.includes("overloaded") ||
-    msg.includes("rate limit") ||
-    msg.includes("resource has been exhausted")
+    process.env.DEEPSEEK_API_KEY ||
+    process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY ||
+    ""
   );
 }
 
@@ -43,21 +31,24 @@ export function getGeminiApiKey(): string {
   );
 }
 
-export function getGeminiTextModel(): string {
+export function getActiveTextModel(): string {
   if (typeof window !== "undefined") {
     try {
-      const saved = localStorage.getItem("gemini_text_model");
+      const saved = localStorage.getItem("active_text_model") || localStorage.getItem("gemini_text_model");
       if (saved && saved.trim()) {
-        if (saved.trim() === "gemini-3-flash-preview") {
-          localStorage.setItem("gemini_text_model", "gemini-2.5-flash");
-          return "gemini-2.5-flash";
+        const val = saved.trim();
+        if (val === "gemini-3-flash-preview") {
+          return DEFAULT_TEXT_MODEL;
         }
-        return saved.trim();
+        return val;
       }
     } catch (_) {}
   }
-  return process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash";
+  return process.env.ACTIVE_TEXT_MODEL || process.env.DEEPSEEK_TEXT_MODEL || DEFAULT_TEXT_MODEL;
 }
+
+// Backward-compatibility alias
+export const getGeminiTextModel = getActiveTextModel;
 
 export function getGeminiImageModel(): string {
   if (typeof window !== "undefined") {
@@ -66,53 +57,149 @@ export function getGeminiImageModel(): string {
       if (saved && saved.trim()) return saved.trim();
     } catch (_) {}
   }
-  return process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
+  return process.env.GEMINI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL;
 }
 
-export function getAiClient(customApiKey?: string): GoogleGenAI {
-  const apiKey = customApiKey || getGeminiApiKey();
-  const client = new GoogleGenAI({ apiKey });
+/**
+ * Call DeepSeek Chat Completions (OpenAI compatible format)
+ */
+async function callDeepSeekChat(params: {
+  model: string;
+  contents: any;
+  config?: any;
+  apiKey?: string;
+}): Promise<{ text: string }> {
+  const apiKey = params.apiKey || getDeepSeekApiKey();
+  if (!apiKey) {
+    throw new Error("DEEPSEEK_API_KEY manquante. Veuillez renseigner votre clé API DeepSeek dans les Paramètres.");
+  }
 
-  const originalGenerateContent = client.models.generateContent.bind(client.models);
+  let promptText = "";
+  if (typeof params.contents === "string") {
+    promptText = params.contents;
+  } else if (params.contents?.parts?.[0]?.text) {
+    promptText = params.contents.parts[0].text;
+  } else {
+    promptText = JSON.stringify(params.contents);
+  }
 
-  client.models.generateContent = async (params: any) => {
-    const requestedModel = params?.model || getGeminiTextModel();
-    const isImage =
-      requestedModel.includes("image") || requestedModel.includes("imagen");
+  const isJsonMode = params.config?.responseMimeType === "application/json";
 
-    const fallbackList = isImage ? IMAGE_FALLBACK_MODELS : TEXT_FALLBACK_MODELS;
-    const candidateModels = [
-      requestedModel,
-      ...fallbackList.filter((m) => m !== requestedModel),
-    ];
-
-    let lastError: any = null;
-
-    for (let i = 0; i < candidateModels.length; i++) {
-      const currentModel = candidateModels[i];
-      const modelParams = { ...params, model: currentModel };
-
-      try {
-        const result = await originalGenerateContent(modelParams);
-        return result;
-      } catch (err: any) {
-        lastError = err;
-        if (isCapacityOrTransientError(err)) {
-          console.warn(
-            `[Funnel AI Engine] Modèle ${currentModel} indisponible (${err.message || "503 UNAVAILABLE"}). Bascule immédiate vers: ${candidateModels[i + 1] || 'fin de liste'}`
-          );
-          if (i < candidateModels.length - 1) {
-            continue;
-          }
-        } else {
-          // Not a capacity error (e.g. invalid auth), throw
-          throw err;
-        }
-      }
-    }
-
-    throw lastError;
+  const requestBody: any = {
+    model: params.model.startsWith("deepseek-") ? params.model : "deepseek-chat",
+    messages: [
+      {
+        role: "system",
+        content: isJsonMode
+          ? "You are an expert sales funnel conversion architect and copywriter. You must always return strictly valid JSON according to the instructions without markdown commentary."
+          : "You are an expert sales funnel conversion architect and copywriter.",
+      },
+      {
+        role: "user",
+        content: promptText,
+      },
+    ],
+    max_tokens: params.config?.maxOutputTokens || 8192,
+    temperature: 0.6,
   };
 
-  return client;
+  if (isJsonMode) {
+    requestBody.response_format = { type: "json_object" };
+  }
+
+  const res = await fetch("https://api.deepseek.com/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Erreur DeepSeek API (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content || "";
+  return { text: content };
+}
+
+/**
+ * Unified AI Client supporting DeepSeek (Text/Reasoning) and Gemini (Images/Fallback)
+ */
+export function getAiClient(customApiKey?: string): any {
+  const geminiKey = customApiKey || getGeminiApiKey();
+  const geminiClient = new GoogleGenAI({ apiKey: geminiKey });
+
+  return {
+    models: {
+      generateContent: async (params: any) => {
+        const requestedModel = params?.model || getActiveTextModel();
+        const isImage =
+          requestedModel.includes("image") || requestedModel.includes("imagen");
+
+        // 1. Image generation always routes through Gemini
+        if (isImage) {
+          return await geminiClient.models.generateContent({
+            model: requestedModel,
+            contents: params.contents,
+          });
+        }
+
+        // 2. If DeepSeek model requested (or default), try DeepSeek first
+        const isDeepSeek = requestedModel.startsWith("deepseek");
+        const deepSeekKey = getDeepSeekApiKey();
+
+        if (isDeepSeek && deepSeekKey) {
+          try {
+            return await callDeepSeekChat({
+              model: requestedModel,
+              contents: params.contents,
+              config: params.config,
+              apiKey: deepSeekKey,
+            });
+          } catch (deepSeekErr: any) {
+            console.warn(
+              "[Funnel AI Engine] Échec DeepSeek, bascule automatique sur Gemini de secours :",
+              deepSeekErr.message
+            );
+            // Fallback to Gemini if available
+            if (geminiKey) {
+              return await geminiClient.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: params.contents,
+                config: params.config,
+              });
+            }
+            throw deepSeekErr;
+          }
+        }
+
+        // 3. Otherwise execute via Gemini
+        if (geminiKey) {
+          return await geminiClient.models.generateContent({
+            model: requestedModel.startsWith("gemini") ? requestedModel : "gemini-2.5-flash",
+            contents: params.contents,
+            config: params.config,
+          });
+        }
+
+        // 4. If neither key exists
+        if (deepSeekKey) {
+          return await callDeepSeekChat({
+            model: "deepseek-chat",
+            contents: params.contents,
+            config: params.config,
+            apiKey: deepSeekKey,
+          });
+        }
+
+        throw new Error(
+          "Aucune clé API configurée. Veuillez ajouter votre clé DEEPSEEK_API_KEY ou GEMINI_API_KEY dans les paramètres."
+        );
+      },
+    },
+  };
 }
