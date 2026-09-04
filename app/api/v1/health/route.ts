@@ -11,7 +11,7 @@ export async function GET() {
       status: "operational",
       service: "Funnel AI Studio Luxe Engine",
       version: "4.5.0",
-      engine: "Cognitive Multi-Agent Pipeline (10 Agents)",
+      engine: "Cognitive Multi-Agent Pipeline (13 Agents)",
       timestamp: new Date().toISOString(),
     },
     { headers: corsHeaders }
