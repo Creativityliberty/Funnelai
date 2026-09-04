@@ -61,13 +61,14 @@ export function getGeminiImageModel(): string {
 }
 
 /**
- * Call DeepSeek Chat Completions (OpenAI compatible format)
+ * Call DeepSeek Chat Completions with strict JSON Output & Context Caching support
  */
 async function callDeepSeekChat(params: {
   model: string;
   contents: any;
   config?: any;
   apiKey?: string;
+  attempt?: number;
 }): Promise<{ text: string }> {
   const apiKey = params.apiKey || getDeepSeekApiKey();
   if (!apiKey) {
@@ -83,7 +84,7 @@ async function callDeepSeekChat(params: {
     promptText = JSON.stringify(params.contents);
   }
 
-  const isJsonMode = params.config?.responseMimeType === "application/json";
+  const isJsonMode = params.config?.responseMimeType === "application/json" || promptText.toLowerCase().includes("json");
 
   const requestBody: any = {
     model: params.model.startsWith("deepseek-") ? params.model : "deepseek-chat",
@@ -91,8 +92,8 @@ async function callDeepSeekChat(params: {
       {
         role: "system",
         content: isJsonMode
-          ? "You are an expert sales funnel conversion architect and copywriter. You must always return strictly valid JSON according to the instructions without markdown commentary."
-          : "You are an expert sales funnel conversion architect and copywriter.",
+          ? "You are an elite sales funnel architect and high-conversion copywriter. You must always return strictly valid JSON. Format your output strictly in JSON according to the schema provided."
+          : "You are an elite sales funnel architect and high-conversion copywriter.",
       },
       {
         role: "user",
@@ -100,7 +101,7 @@ async function callDeepSeekChat(params: {
       },
     ],
     max_tokens: params.config?.maxOutputTokens || 8192,
-    temperature: 0.6,
+    temperature: 0.5,
   };
 
   if (isJsonMode) {
@@ -123,6 +124,13 @@ async function callDeepSeekChat(params: {
 
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content || "";
+
+  // If DeepSeek occasionally returns empty content in JSON mode, retry once
+  if (!content.trim() && (!params.attempt || params.attempt < 2)) {
+    console.warn("[DeepSeek] Contenu vide reçu en mode JSON, nouvel essai...");
+    return callDeepSeekChat({ ...params, attempt: (params.attempt || 1) + 1 });
+  }
+
   return { text: content };
 }
 
@@ -148,7 +156,7 @@ export function getAiClient(customApiKey?: string): any {
           });
         }
 
-        // 2. If DeepSeek model requested (or default), try DeepSeek first
+        // 2. If DeepSeek model requested (or default), execute via DeepSeek
         const isDeepSeek = requestedModel.startsWith("deepseek");
         const deepSeekKey = getDeepSeekApiKey();
 
@@ -162,10 +170,9 @@ export function getAiClient(customApiKey?: string): any {
             });
           } catch (deepSeekErr: any) {
             console.warn(
-              "[Funnel AI Engine] Échec DeepSeek, bascule automatique sur Gemini de secours :",
+              "[Funnel AI Engine] Avertissement DeepSeek, bascule automatique sur Gemini de secours :",
               deepSeekErr.message
             );
-            // Fallback to Gemini if available
             if (geminiKey) {
               return await geminiClient.models.generateContent({
                 model: "gemini-2.5-flash",
@@ -186,7 +193,7 @@ export function getAiClient(customApiKey?: string): any {
           });
         }
 
-        // 4. If neither key exists
+        // 4. Fallback if only DeepSeek key is available
         if (deepSeekKey) {
           return await callDeepSeekChat({
             model: "deepseek-chat",
