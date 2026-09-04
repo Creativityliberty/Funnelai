@@ -34,10 +34,10 @@ export function getGeminiApiKey(): string {
 export function getActiveTextModel(): string {
   if (typeof window !== "undefined") {
     try {
-      const saved = localStorage.getItem("active_text_model") || localStorage.getItem("gemini_text_model");
+      const saved = localStorage.getItem("active_text_model");
       if (saved && saved.trim()) {
         const val = saved.trim();
-        if (val === "gemini-3-flash-preview") {
+        if (val === "gemini-3-flash-preview" || val === "gemini-2.5-flash") {
           return DEFAULT_TEXT_MODEL;
         }
         return val;
@@ -135,11 +135,12 @@ async function callDeepSeekChat(params: {
 }
 
 /**
- * Unified AI Client supporting DeepSeek (Text/Reasoning) and Gemini (Images/Fallback)
+ * Unified AI Client supporting DeepSeek (Primary for Text/Reasoning) and Gemini (Images & Failover)
  */
 export function getAiClient(customApiKey?: string): any {
   const geminiKey = customApiKey || getGeminiApiKey();
   const geminiClient = new GoogleGenAI({ apiKey: geminiKey });
+  const deepSeekKey = getDeepSeekApiKey();
 
   return {
     models: {
@@ -148,49 +149,73 @@ export function getAiClient(customApiKey?: string): any {
         const isImage =
           requestedModel.includes("image") || requestedModel.includes("imagen");
 
-        // 1. Image generation always routes through Gemini
+        // 1. Image generation always routes through Gemini Imagen
         if (isImage) {
+          if (!geminiKey) {
+            throw new Error("Clé GEMINI_API_KEY requise pour la génération d'images.");
+          }
           return await geminiClient.models.generateContent({
             model: requestedModel,
             contents: params.contents,
           });
         }
 
-        // 2. If DeepSeek model requested (or default), execute via DeepSeek
-        const isDeepSeek = requestedModel.startsWith("deepseek");
-        const deepSeekKey = getDeepSeekApiKey();
-
-        if (isDeepSeek && deepSeekKey) {
+        // 2. Primary: Route all text/reasoning to DeepSeek whenever available
+        const isDeepSeekExplicit = requestedModel.startsWith("deepseek");
+        if (deepSeekKey && (isDeepSeekExplicit || !geminiKey || requestedModel === DEFAULT_TEXT_MODEL)) {
           try {
             return await callDeepSeekChat({
-              model: requestedModel,
+              model: isDeepSeekExplicit ? requestedModel : "deepseek-chat",
               contents: params.contents,
               config: params.config,
               apiKey: deepSeekKey,
             });
           } catch (deepSeekErr: any) {
             console.warn(
-              "[Funnel AI Engine] Avertissement DeepSeek, bascule automatique sur Gemini de secours :",
+              "[Funnel AI Engine] Avertissement DeepSeek, tentative sur Gemini de secours :",
               deepSeekErr.message
             );
             if (geminiKey) {
-              return await geminiClient.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: params.contents,
-                config: params.config,
-              });
+              try {
+                return await geminiClient.models.generateContent({
+                  model: "gemini-2.5-flash",
+                  contents: params.contents,
+                  config: params.config,
+                });
+              } catch (geminiErr: any) {
+                console.error("[Funnel AI Engine] Échec des deux moteurs d'IA :", geminiErr);
+                throw new Error(
+                  `Erreur IA : ${deepSeekErr.message || geminiErr.message}`
+                );
+              }
             }
             throw deepSeekErr;
           }
         }
 
-        // 3. Otherwise execute via Gemini
+        // 3. If explicitly Gemini requested, execute via Gemini with automatic DeepSeek failover on 429 / quota exceeded
         if (geminiKey) {
-          return await geminiClient.models.generateContent({
-            model: requestedModel.startsWith("gemini") ? requestedModel : "gemini-2.5-flash",
-            contents: params.contents,
-            config: params.config,
-          });
+          try {
+            return await geminiClient.models.generateContent({
+              model: requestedModel.startsWith("gemini") ? requestedModel : "gemini-2.5-flash",
+              contents: params.contents,
+              config: params.config,
+            });
+          } catch (geminiErr: any) {
+            console.warn(
+              "[Funnel AI Engine] Quota/Erreur Gemini détecté, bascule automatique instantanée sur DeepSeek :",
+              geminiErr.message
+            );
+            if (deepSeekKey) {
+              return await callDeepSeekChat({
+                model: "deepseek-chat",
+                contents: params.contents,
+                config: params.config,
+                apiKey: deepSeekKey,
+              });
+            }
+            throw geminiErr;
+          }
         }
 
         // 4. Fallback if only DeepSeek key is available

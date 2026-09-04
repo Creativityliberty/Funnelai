@@ -100,8 +100,13 @@ export default function Page() {
       setIsSidebarCollapsed(true);
     }
 
-    const savedTextModel = localStorage.getItem('active_text_model') || localStorage.getItem('gemini_text_model');
-    if (savedTextModel) setSelectedTextModel(savedTextModel);
+    const savedTextModel = localStorage.getItem('active_text_model');
+    if (savedTextModel && savedTextModel.startsWith('deepseek')) {
+      setSelectedTextModel(savedTextModel);
+    } else {
+      setSelectedTextModel('deepseek-chat');
+      localStorage.setItem('active_text_model', 'deepseek-chat');
+    }
 
     const savedImageModel = localStorage.getItem('gemini_image_model');
     if (savedImageModel) setSelectedImageModel(savedImageModel);
